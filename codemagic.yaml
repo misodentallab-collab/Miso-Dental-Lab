@@ -21,6 +21,16 @@ workflows:
         script: |
           cd "$CM_BUILD_DIR/src"
           pod install || pod install --repo-update
+      - name: Remove Associated Domains entitlement (App ID has no such capability)
+        script: |
+          python3 - << 'PY'
+          import plistlib, os
+          p = os.path.join(os.environ["CM_BUILD_DIR"], "src/MISO/Entitlements/Entitlements.plist")
+          d = plistlib.load(open(p, "rb"))
+          d.pop("com.apple.developer.associated-domains", None)
+          plistlib.dump(d, open(p, "wb"))
+          print("associated-domains entitlement removed")
+          PY
       - name: Set up code signing (auto-create cert + profile)
         script: |
           set -e
