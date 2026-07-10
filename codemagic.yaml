@@ -1,30 +1,48 @@
 # MISO Dental Lab — iOS App Store 빌드 (맥 없이 클라우드 빌드)
-# Codemagic → 이 레포 연결 → App Store Connect API 키 통합 등록 후 빌드
+# Codemagic → 이 레포 연결 → App Store Connect API 키(MISO_ASC_KEY) 등록 후 빌드
+# 서명 인증서/프로필은 빌드 중 자동 생성됩니다 (fetch-signing-files --create).
 workflows:
   ios-appstore:
     name: MISO iOS App Store
     max_build_duration: 60
     instance_type: mac_mini_m2
     integrations:
-      app_store_connect: MISO_ASC_KEY      # ← Codemagic Teams > Integrations에 등록한 API 키 이름
+      app_store_connect: MISO_ASC_KEY      # ← Codemagic 개발자 포털 통합에 등록한 API 키 이름
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.misodentallab.app
       vars:
+        BUNDLE_ID: "com.misodentallab.app"
         XCODE_WORKSPACE: "src/MISO.xcworkspace"
         XCODE_SCHEME: "MISO"
         APP_STORE_APPLE_ID: 6789481602     # MISO Dental Lab (App Store Connect)
       xcode: latest
     scripts:
-      - name: Set up provisioning profiles
-        script: xcode-project use-profiles
+      - name: Set up code signing (auto-create cert + profile)
+        script: |
+          set -e
+          keychain initialize
+          # 서명용 개인키: 저장된 값이 있으면 재사용, 없으면 새로 생성
+          if [ -z "$CERTIFICATE_PRIVATE_KEY" ]; then
+            ssh-keygen -t rsa -b 2048 -m PEM -f /tmp/cert_key -q -N ""
+            CERT_KEY_REF="@file:/tmp/cert_key"
+          else
+            CERT_KEY_REF="@env:CERTIFICATE_PRIVATE_KEY"
+          fi
+          # 배포 인증서 + App Store 프로비저닝 프로필을 없으면 자동 생성/가져오기
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key "$CERT_KEY_REF" \
+            --create \
+            --delete-stale-profiles
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Increment build number
         script: |
-          agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0) + 1))
+          cd "$CM_BUILD_DIR/src" 2>/dev/null || cd "$CM_BUILD_DIR"
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          agvtool new-version -all $((LATEST + 1)) 2>/dev/null || true
       - name: Build ipa
         script: |
-          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
+          xcode-project build-ipa --workspace "$CM_BUILD_DIR/$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
