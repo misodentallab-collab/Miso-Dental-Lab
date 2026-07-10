@@ -15,7 +15,12 @@ workflows:
         XCODE_SCHEME: "MISO"
         APP_STORE_APPLE_ID: 6789481602     # MISO Dental Lab (App Store Connect)
       xcode: latest
+      cocoapods: default
     scripts:
+      - name: Install CocoaPods dependencies
+        script: |
+          cd "$CM_BUILD_DIR/src"
+          pod install || pod install --repo-update
       - name: Set up code signing (auto-create cert + profile)
         script: |
           set -e
