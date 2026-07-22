@@ -30,10 +30,11 @@ func handleSubscribeTouch(message: WKScriptMessage) {
     if (subscribeMessages.count > 0){
         let _message = subscribeMessages[0]
         if (_message.unsubscribe) {
-            Messaging.messaging().unsubscribe(fromTopic: _message.topic) { error in }
+            // MISO: direct APNs — Firebase topics unused
+            _ = _message // Messaging.messaging().unsubscribe(fromTopic: _message.topic) { error in }
         }
         else {
-            Messaging.messaging().subscribe(toTopic: _message.topic) { error in }
+            // Messaging.messaging().subscribe(toTopic: _message.topic) { error in }
         }
     }
     
@@ -147,17 +148,8 @@ func checkViewAndEvaluate(event: String, detail: String) {
 }
 
 func handleFCMToken(){
-    DispatchQueue.main.async(execute: {
-        Messaging.messaging().token { token, error in
-            if let error = error {
-                print("Error fetching FCM registration token: \(error)")
-                checkViewAndEvaluate(event: "push-token", detail: "ERROR GET TOKEN")
-            } else if let token = token {
-                print("FCM registration token: \(token)")
-                checkViewAndEvaluate(event: "push-token", detail: "'\(token)'")
-            }
-        }   
-    })
+    // MISO: direct APNs — no FCM token. The raw APNs token is delivered via
+    // AppDelegate.application(_:didRegisterForRemoteNotificationsWithDeviceToken:) -> 'push-token' event.
 }
 
 func sendPushToWebView(userInfo: [AnyHashable: Any]){

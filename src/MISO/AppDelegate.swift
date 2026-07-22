@@ -11,11 +11,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication,
                        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
-// TODO: if we're using Firebase, uncomment next string
+// MISO: direct APNs — do NOT configure Firebase (raw APNs token is used instead)
         //FirebaseApp.configure()
 
         // [START set_messaging_delegate]
-        Messaging.messaging().delegate = self
+        // MISO: direct APNs — Firebase Messaging delegate disabled (no FirebaseApp.configure)
+        // Messaging.messaging().delegate = self
         // [END set_messaging_delegate]
         // Register for remote notifications. This shows a permission dialog on first run, to
         // show the dialog at a more appropriate time move this registration accordingly.
@@ -77,12 +78,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       // This function is added here only for debugging purposes, and can be removed if swizzling is enabled.
       // If swizzling is disabled then this function must be implemented so that the APNs token can be paired to
       // the FCM registration token.
-//      func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-//        print("APNs token retrieved: \(deviceToken)")
-//
-//        // With swizzling disabled you must set the APNs token here.
-//        // Messaging.messaging().apnsToken = deviceToken
-//      }
+      // MISO: hand the raw APNs device token to the web app (-> miso-push worker -> APNs direct)
+      func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenHex = deviceToken.map { String(format: "%02x", $0) }.joined()
+        print("APNs token: \(tokenHex)")
+        checkViewAndEvaluate(event: "push-token", detail: "'\(tokenHex)'")
+      }
     }
 
     // [START ios_10_message_handling]
