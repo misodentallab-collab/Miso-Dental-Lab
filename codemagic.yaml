@@ -34,8 +34,10 @@ workflows:
       - name: Clean up old signing certificates & profiles (avoid Apple cert limit)
         script: |
           # 매 빌드마다 새 서명키를 만들기 때문에, 기존 배포 인증서/프로필을 먼저 정리하고 새로 생성한다.
-          CERT_IDS=$(app-store-connect certificates list --type IOS_DISTRIBUTION --json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(' '.join(c.get('id','') for c in (d if isinstance(d,list) else [])))" 2>/dev/null || echo "")
-          for ID in $CERT_IDS; do echo "revoke cert $ID"; app-store-connect certificates delete "$ID" --ignore-not-found 2>/dev/null || true; done
+          for CT in IOS_DISTRIBUTION DISTRIBUTION; do
+            CERT_IDS=$(app-store-connect certificates list --type $CT --json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(' '.join(c.get('id','') for c in (d if isinstance(d,list) else [])))" 2>/dev/null || echo "")
+            for ID in $CERT_IDS; do echo "revoke $CT cert $ID"; app-store-connect certificates delete "$ID" --ignore-not-found 2>/dev/null || true; done
+          done
           PROF_IDS=$(app-store-connect profiles list --type IOS_APP_STORE --json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(' '.join(p.get('id','') for p in (d if isinstance(d,list) else [])))" 2>/dev/null || echo "")
           for ID in $PROF_IDS; do echo "delete profile $ID"; app-store-connect profiles delete "$ID" --ignore-not-found 2>/dev/null || true; done
           echo "signing cleanup done"
