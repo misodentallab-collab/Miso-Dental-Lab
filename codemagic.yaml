@@ -14,6 +14,7 @@ workflows:
         XCODE_WORKSPACE: "src/MISO.xcworkspace"
         XCODE_SCHEME: "MISO"
         APP_STORE_APPLE_ID: 6789481602     # MISO Dental Lab (App Store Connect)
+        APP_VERSION: "1.2"                 # ← App Store 표시 버전. 심사 통과할 때마다 올릴 것
       xcode: latest
       cocoapods: default
     scripts:
@@ -65,6 +66,10 @@ workflows:
           cd "$CM_BUILD_DIR/src" 2>/dev/null || cd "$CM_BUILD_DIR"
           LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
           agvtool new-version -all $((LATEST + 1)) 2>/dev/null || true
+          # MISO: 마케팅 버전(CFBundleShortVersionString)도 올려야 한다.
+          # 이미 승인된 버전과 같으면 TestFlight 업로드가 "Invalid Pre-Release Train" 으로 거부된다.
+          agvtool new-marketing-version "$APP_VERSION" 2>/dev/null || true
+          echo "marketing version = $APP_VERSION / build = $((LATEST + 1))"
       - name: Build ipa
         script: |
           xcode-project build-ipa --workspace "$CM_BUILD_DIR/$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
