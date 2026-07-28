@@ -143,7 +143,7 @@ extension ViewController: WKUIDelegate, WKDownloadDelegate {
                     return
                 }
                 if (navigationAction.navigationType == .other &&
-                    navigationAction.value(forKey: "syntheticClickType") as! Int == 0 &&
+                    (navigationAction.value(forKey: "syntheticClickType") as? Int ?? 0) == 0 &&
                     (navigationAction.targetFrame != nil) &&
                     // no error here, fake warning
                     (navigationAction.sourceFrame != nil)
@@ -372,7 +372,23 @@ extension ViewController: WKUIDelegate, WKDownloadDelegate {
             try? FileManager.default.removeItem(at: fileURL)
         }
 
-        self.openFile(url: fileURL)
+        // MISO: 예전에는 여기서 바로 openFile 을 호출해서
+        // 아직 저장되지 않은 파일을 여는 바람에 미리보기가 비거나 이전 파일이 떴다.
+        // 실제 다운로드가 끝난 뒤(downloadDidFinish)에 열도록 변경.
+        self.pendingDownloadURL = fileURL
         completionHandler(fileURL)
+    }
+
+    func downloadDidFinish(_ download: WKDownload) {
+        guard let url = self.pendingDownloadURL else { return }
+        self.pendingDownloadURL = nil
+        DispatchQueue.main.async {
+            self.openFile(url: url)
+        }
+    }
+
+    func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+        self.pendingDownloadURL = nil
+        print("MISO download failed: \(error.localizedDescription)")
     }
 }

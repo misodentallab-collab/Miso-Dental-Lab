@@ -28,6 +28,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // MISO: 실행 시 배지 초기화
         misoClearBadge()
 
+        // MISO: 이미 알림 권한이 허용된 상태면 매 실행마다 APNs 토큰을 다시 등록해야 한다.
+        // (등록하지 않으면 토큰이 갱신되지 않아 어느 순간 푸시가 조용히 끊긴다)
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional {
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            }
+        }
+
       //  let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
       //  UNUserNotificationCenter.current().requestAuthorization(
       //      options: authOptions,

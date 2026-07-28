@@ -10,6 +10,8 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
     }
 
     var documentController: UIDocumentInteractionController?
+    // MISO: 다운로드가 끝난 뒤에 열기 위해 경로를 보관
+    var pendingDownloadURL: URL?
     func documentInteractionControllerViewControllerForPreview(_ controller: UIDocumentInteractionController) -> UIViewController {
         return self
     }
