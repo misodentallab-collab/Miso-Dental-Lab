@@ -1,4 +1,5 @@
 import UIKit
+import UserNotifications
 import FirebaseCore
 import FirebaseMessaging
 
@@ -24,6 +25,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
    
         UNUserNotificationCenter.current().delegate = self
 
+        // MISO: 실행 시 배지 초기화
+        misoClearBadge()
+
       //  let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
       //  UNUserNotificationCenter.current().requestAuthorization(
       //      options: authOptions,
@@ -34,6 +38,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // [END register_for_notifications]
         return true
+      }
+
+      // MISO: 앱이 포그라운드로 올라올 때마다 배지 제거
+      func applicationDidBecomeActive(_ application: UIApplication) {
+        misoClearBadge()
+      }
+
+      func applicationWillEnterForeground(_ application: UIApplication) {
+        misoClearBadge()
       }
 
       // [START receive_message]
@@ -124,6 +137,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("push userInfo 4:", userInfo)
         sendPushClickToWebView(userInfo: userInfo)
 
+        // MISO: 알림을 눌러서 열었으면 배지 제거
+        misoClearBadge()
+
         completionHandler()
       }
     }
@@ -142,3 +158,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       }
       // [END refresh_token]
     }
+
+// ===== MISO: 앱 아이콘 배지 초기화 =====
+// 알림을 읽어도 홈 화면 아이콘의 빨간 숫자(1)가 사라지지 않던 문제 수정.
+// APNs 페이로드의 badge 값은 iOS가 앱에서 명시적으로 0으로 되돌리기 전까지 유지된다.
+func misoClearBadge() {
+    DispatchQueue.main.async {
+        if #available(iOS 16.0, *) {
+            UNUserNotificationCenter.current().setBadgeCount(0) { _ in }
+        } else {
+            UIApplication.shared.applicationIconBadgeNumber = 0
+        }
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+    }
+}
