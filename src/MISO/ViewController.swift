@@ -42,10 +42,51 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
         super.viewDidLoad()
         initWebView()
         initToolbarView()
+        styleLoadingView()          // MISO: 로딩 화면을 웹 스플래시와 같은 배경 한 장으로
         loadRootUrl()
     
         NotificationCenter.default.addObserver(self, selector: #selector(self.keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification , object: nil)
         
+    }
+
+    /*  MISO 2026-07-29
+        기존에는 로딩 중에 아이콘 + 진행바가 있는 밋밋한 화면이 떴고,
+        웹페이지를 "전부" 받은 뒤에야(+0.8초) 화면을 보여줘서 시작이 길게 느껴졌다.
+        -> 로딩 화면을 웹 스플래시와 똑같은 배경색 한 장으로 만들고,
+           첫 화면이 그려지는 순간 바로 웹뷰를 보여준다. (웹의 움직이는 미소 로고가 이어서 나온다)  */
+    private let misoSplashBG = UIColor(red: 0xFB/255.0, green: 0xF7/255.0, blue: 0xF0/255.0, alpha: 1.0)
+
+    func styleLoadingView() {
+        view.backgroundColor = misoSplashBG
+        loadingView?.backgroundColor = misoSplashBG
+        progressView?.isHidden = true
+        connectionProblemView?.isHidden = true
+        // 스토리보드에 들어있는 정지 이미지(작은 로고)는 숨긴다 — 웹의 움직이는 로고가 대신한다
+        loadingView?.subviews.forEach { sub in
+            if sub is UIImageView || sub is UIProgressView { sub.isHidden = true }
+        }
+        MISO.webView?.isOpaque = false
+        MISO.webView?.backgroundColor = misoSplashBG
+        MISO.webView?.scrollView.backgroundColor = misoSplashBG
+    }
+
+    /*  첫 픽셀이 그려지는 시점에 웹뷰를 보여준다.
+        여기서부터 웹의 스플래시(획이 하나씩 그려지는 미소 로고)가 화면에 나온다.  */
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        revealWebView()
+    }
+
+    private var didReveal = false
+    func revealWebView() {
+        if didReveal { return }
+        didReveal = true
+        MISO.webView.alpha = 0
+        MISO.webView.isHidden = false
+        UIView.animate(withDuration: 0.18, animations: {
+            MISO.webView.alpha = 1
+        }, completion: { _ in
+            self.loadingView?.isHidden = true
+        })
     }
 
     override func viewDidLayoutSubviews() {
@@ -155,14 +196,10 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
         self.setProgress(1.0, true)
         self.animateConnectionProblem(false)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            MISO.webView.isHidden = false
-            self.loadingView.isHidden = true
-           
-            self.setProgress(0.0, false)
-            
-            self.overrideUIStyle()
-        }
+        /* MISO: 이미 didCommit 에서 보여줬으므로 여기서는 마무리만 한다 (예전의 0.8초 지연 제거) */
+        revealWebView()
+        self.setProgress(0.0, false)
+        self.overrideUIStyle()
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
@@ -172,6 +209,7 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
         if (error as NSError)._code == 102 { return }
         
         self.overrideUIStyle(toDefault: true);
+        didReveal = false;              // MISO: 실패했으면 다시 로딩 화면으로
         webView.isHidden = true;
         loadingView.isHidden = false;
 
