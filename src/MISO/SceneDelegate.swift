@@ -11,6 +11,28 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     static var shortcutLinkToLaunch: URL? = nil
 
 
+    // MISO: 그레이카드 QR(=miso-order-new.pages.dev/...?cam=1)로 앱이 열렸을 때
+    // 웹 로그인창 대신 앱 로그인 세션이 살아있는 앱 홈(카메라)으로 보낸다.
+    static func misoMapCardQR(_ url: URL?) -> URL? {
+        guard let url = url else { return nil }
+        guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
+        let host = (comps.host ?? "").lowercased()
+        guard host == "miso-order-new.pages.dev" || host == "order.misodentallab.com" else { return url }
+
+        var out = URLComponents()
+        out.scheme = "https"
+        out.host = "app.misodentallab.com"
+        out.path = "/"
+        var q: [URLQueryItem] = [URLQueryItem(name: "cam", value: "1")]
+        for it in (comps.queryItems ?? []) {
+            if it.name == "shot" || it.name == "lang" || it.name == "clinic" {
+                q.append(it)
+            }
+        }
+        out.queryItems = q
+        return out.url ?? url
+    }
+
     // This function is called when your app launches.
     // Check to see if we were launched via a universal link or a shortcut.
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -18,7 +40,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // If so, store that link so we can navigate to it once our webView is initialized.
         for userActivity in connectionOptions.userActivities {
             if let universalLink = userActivity.webpageURL {
-                SceneDelegate.universalLinkToLaunch = universalLink;
+                SceneDelegate.universalLinkToLaunch = SceneDelegate.misoMapCardQR(universalLink);
                 break
             }
         }
@@ -35,7 +57,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             comps?.scheme = "https"
             
             if let url = comps?.url {
-                SceneDelegate.universalLinkToLaunch = url;
+                SceneDelegate.universalLinkToLaunch = SceneDelegate.misoMapCardQR(url);
             }
         }
     }
@@ -67,7 +89,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
 
         // Handle it inside our web view in a SPA-friendly way.
-        MISO.webView.evaluateJavaScript("location.href = '\(universalLink)'")
+        let target = SceneDelegate.misoMapCardQR(universalLink) ?? universalLink
+        MISO.webView.evaluateJavaScript("location.href = '\(target)'")
     }
 
     // This function is called if our app is already loaded and the user activates the app via shortcut
