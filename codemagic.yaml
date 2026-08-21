@@ -22,15 +22,22 @@ workflows:
         script: |
           cd "$CM_BUILD_DIR/src"
           pod install || pod install --repo-update
-      - name: Remove Associated Domains entitlement (App ID has no such capability)
+      - name: Check Associated Domains entitlement is present
         script: |
+          # 2026-08: Apple Developer 포털에서 App ID 에 Associated Domains 를 켰다.
+          # 그레이카드 QR(miso-order-new.pages.dev) -> 앱 자동 실행이 이 entitlement 에 달려 있으므로
+          # 예전처럼 지우지 않고, 반대로 빠져 있으면 빌드를 실패시킨다.
           python3 - << 'PY'
-          import plistlib, os
+          import plistlib, os, sys
           p = os.path.join(os.environ["CM_BUILD_DIR"], "src/MISO/Entitlements/Entitlements.plist")
           d = plistlib.load(open(p, "rb"))
-          d.pop("com.apple.developer.associated-domains", None)
-          plistlib.dump(d, open(p, "wb"))
-          print("associated-domains entitlement removed")
+          doms = d.get("com.apple.developer.associated-domains") or []
+          print("associated-domains =", doms)
+          need = ["applinks:miso-order-new.pages.dev", "applinks:app.misodentallab.com"]
+          missing = [n for n in need if n not in doms]
+          if missing:
+              sys.exit("MISSING associated-domains entries: %s" % missing)
+          print("associated-domains OK")
           PY
       - name: Clean up old signing certificates & profiles (avoid Apple cert limit)
         script: |
