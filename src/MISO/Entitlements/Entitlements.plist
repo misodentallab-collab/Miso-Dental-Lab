@@ -6,7 +6,10 @@
 	<string>production</string>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
+		<string>applinks:app.misodentallab.com</string>
 		<string>applinks:miso-app.pages.dev</string>
+		<string>applinks:miso-order-new.pages.dev</string>
+		<string>webcredentials:app.misodentallab.com</string>
 		<string>webcredentials:miso-app.pages.dev</string>
 	</array>
 	<key>com.apple.security.app-sandbox</key>
