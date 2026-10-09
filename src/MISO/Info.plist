@@ -4,6 +4,8 @@
 <dict>
 	<key>NSCameraUsageDescription</key>
 	<string>MISO Dental Lab uses the camera so you can photograph tooth shades and dental cases. These photos are attached to lab orders and used for AI shade analysis. The camera is only used when you tap to take a photo.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MISO uses your location to check in at the lab when you clock in for work and to show your position to the lab manager during deliveries.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
