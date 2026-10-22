@@ -312,5 +312,8 @@ extension ViewController: WKScriptMessageHandler {
         if message.name == "push-token" {
             handleFCMToken()
         }
+        if message.name == "miso-trk" {
+            MisoTracker.shared.handle(message.body)
+        }
   }
 }
