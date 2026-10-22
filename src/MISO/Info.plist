@@ -4,6 +4,10 @@
 <dict>
 	<key>NSCameraUsageDescription</key>
 	<string>MISO Dental Lab uses the camera so you can photograph tooth shades and dental cases. These photos are attached to lab orders and used for AI shade analysis. The camera is only used when you tap to take a photo.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>While you are clocked in for work, MISO shares your location with the lab manager during deliveries and records the distance driven for fuel reimbursement, even when the app is in the background. Location is not used after you clock out.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>While you are clocked in for work, MISO shares your location with the lab manager during deliveries and records the distance driven for fuel reimbursement, even when the app is in the background. Location is not used after you clock out.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MISO uses your location to check in at the lab when you clock in for work and to show your position to the lab manager during deliveries.</string>
 	<key>CFBundleDevelopmentRegion</key>
@@ -65,6 +69,7 @@
 	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>location</string>
 		<string>processing</string>
 		<string>remote-notification</string>
 	</array>
